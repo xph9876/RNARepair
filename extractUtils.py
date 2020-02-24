@@ -100,13 +100,20 @@ def merge_parts(middles):
             aligns[seq] = k
         out[aligns[seq]] += middles[k]
     return out
-        
+
 
 # output middles
-def output_middles(middles, fw):
+def output_middles(middles, fw, index=True):
     assert len(middles) > 0, 'No middle part is captured'
     seqs = sorted(middles.keys(), key = lambda x: -middles[x])
     count = sum(middles.values())
-    fw.write('Sequence\tCount\tFrequency\n')
-    for s in seqs:
-        fw.write(f'{s}\t{middles[s]}\t{middles[s]/count}\n')
+    if index:
+        fw.write('Id\tSequence\tCount\tFrequency\n')
+        curr = 1
+        for s in seqs:
+            fw.write(f'{curr}\t{s}\t{middles[s]}\t{middles[s]/count}\n')
+            curr += 1
+    else:
+        fw.write('Sequence\tCount\tFrequency\n')
+        for s in seqs:
+            fw.write(f'{s}\t{middles[s]}\t{middles[s]/count}\n')

@@ -4,65 +4,61 @@ import matplotlib.pyplot as plt
 import argparse
 from collections import defaultdict
 
-# read orders from input csv file
-def generate_freq(fr, t):
-    fr.readline()
-    freqs = defaultdict(float)
-    for l in fr:
-        ws = l.rstrip().split('\t')
-        if len(ws) < 2:
-            continue
-        count = int(ws[1])
-        if count < t:
-            return freqs
-        freqs[ws[0]] = float(ws[2])
-    return freqs
-
-
-# generate points
-def generate_points(o1, o2):
-    x = []
-    y = []
-    for k,v in o1.items():
-        x.append(v)
-        y.append(o2[k])
-    for k,v in o2.items():
-        if k not in o1:
-            x.append(o1[k])
-            y.append(v)
-    return x,y
-
+# read freqs from input csv file
+def generate_data(fra, frb, t):
+    data = []
+    for flag, fr in [[True, fra], [False, frb]]:
+        fr.readline()
+        for l in fr:
+            ws = l.rstrip().split('\t')
+            if len(ws) < 8:
+                continue
+            if max([int(ws[3]), int(ws[6])]) < t:
+                continue
+            label = ws[0]
+            if flag:
+                x = float(ws[4])
+                y = float(ws[7])
+            else:
+                x = float(ws[7])
+                y = float(ws[4])
+            data.append((x,y,label))
+    return data
 
 def main():
-    parser = argparse.ArgumentParser(description='Get rate plot for sequece with frequency in file1 and file2')
-    parser.add_argument('file1', type=argparse.FileType('r'), help='Tsv file 1')
-    parser.add_argument('file2', type=argparse.FileType('r'), help='Tsv file 2')
+    parser = argparse.ArgumentParser(description='Get rate plot for sequece with frequency in a pair of preference files')
+    parser.add_argument('file1', type=argparse.FileType('r'), help='Preference file 1 in tsv format')
+    parser.add_argument('file2', type=argparse.FileType('r'), help='Preference file 2 in tsv format')
     parser.add_argument('-t', type=int, default=1, help='Mininum threshold for read counts (1)')
     parser.add_argument('-o', default='freq.png', help='Output plot name')
     args = parser.parse_args()
 
-    # read order
-    orders1 = generate_freq(args.file1, args.t)
-    orders2 = generate_freq(args.file2, args.t)
-
-    # generate points
-    xs,ys = generate_points(orders1, orders2)
+    # read data
+    data = generate_data(args.file1, args.file2, args.t)
 
     # plot
-    fig, _ = plt.subplots(figsize=(8,8))
-    plt.plot(xs, ys, 'o')
+    fig, ax = plt.subplots(figsize=(16,16), dpi=100)
+    plt.plot([x[0] for x in data], [x[1] for x in data], 'o')
 
-    # label
+    # labels
+    for x,y,l in data:
+        plt.annotate(l, (x,y), textcoords="offset points", xytext=(2,-8), fontsize=6)
     name1 = args.file1.name.split('/')[-1].split('.')[0]
     name2 = args.file2.name.split('/')[-1].split('.')[0]
-    plt.xlabel(f'Rank in {name1}')
-    plt.ylabel(f'Rank in {name2}')
-    lim = max(xs + ys)
-    plt.xlim([0, lim])
-    plt.ylim([0, lim])
-    plt.plot([0, lim], [0,lim], 'k--')
+    plt.xlabel(f'Frequency in {name1}')
+    plt.ylabel(f'Frequency in {name2}')
+    plt.xscale('log')
+    plt.yscale('log')
+
+    # limit
+    lim = [min(ax.get_xlim()[0], ax.get_ylim()[0]),\
+           max(ax.get_xlim()[1], ax.get_ylim()[1])]
+    plt.xlim(lim)
+    plt.ylim(lim)
+    plt.plot(lim, lim, 'k--')
+
     # spearman's correlation
-    fig.suptitle(f'Frequency in the two libraries\n Count = {len(xs)}, threshold = {args.t}')
+    fig.suptitle(f'Frequency in the two libraries\n Count = {len(data)}, threshold = {args.t}')
     plt.savefig(args.o)
     print('Done!')
 
