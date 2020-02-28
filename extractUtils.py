@@ -34,7 +34,7 @@ def get_middle_part(ws, ref, capture_start, capture_end, anchor_length, mismatch
     a2_s = capture_end - anchor_length - 1
     a2_e = a2_s + anchor_length
     # decipher cigar
-    curr = 0
+    curr = start
     cache = ''
     insertions = {}
     for c in cigar:

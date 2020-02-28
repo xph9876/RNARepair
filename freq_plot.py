@@ -6,15 +6,23 @@ from collections import defaultdict
 
 # read freqs from input csv file
 def generate_data(fra, frb, t):
-    data = []
+    c1 = 'blue'
+    c2 = 'red'
+    data = {c1:[], c2:[]}
     for flag, fr in [[True, fra], [False, frb]]:
         fr.readline()
         for l in fr:
             ws = l.rstrip().split('\t')
             if len(ws) < 8:
                 continue
+            # must reach threshold in at least one library
             if max([int(ws[3]), int(ws[6])]) < t:
                 continue
+            # color
+            curr = data[c1]
+            if min([int(ws[3]), int(ws[6])]) < t:
+                curr = data[c2]
+            # label
             label = ws[0]
             if flag:
                 x = float(ws[4])
@@ -22,7 +30,7 @@ def generate_data(fra, frb, t):
             else:
                 x = float(ws[7])
                 y = float(ws[4])
-            data.append((x,y,label))
+            curr.append((x, y, label))
     return data
 
 def main():
@@ -38,11 +46,13 @@ def main():
 
     # plot
     fig, ax = plt.subplots(figsize=(16,16), dpi=100)
-    plt.plot([x[0] for x in data], [x[1] for x in data], 'o')
+    for c, values in data.items():
+        plt.plot([x[0] for x in values], [x[1] for x in values], 'o', color=c)
 
     # labels
-    for x,y,l in data:
-        plt.annotate(l, (x,y), textcoords="offset points", xytext=(2,-8), fontsize=6)
+    for vs in data.values():
+        for x,y,l in vs:
+            plt.annotate(l, (x,y), textcoords="offset points", xytext=(2,-8), fontsize=6)
     name1 = args.file1.name.split('/')[-1].split('.')[0]
     name2 = args.file2.name.split('/')[-1].split('.')[0]
     plt.xlabel(f'Frequency in {name1}')
@@ -57,8 +67,11 @@ def main():
     plt.ylim(lim)
     plt.plot(lim, lim, 'k--')
 
-    # spearman's correlation
-    fig.suptitle(f'Frequency in the two libraries\n Count = {len(data)}, threshold = {args.t}')
+    # count
+    count = 0
+    for v in data.values():
+        count += len(v)
+    fig.suptitle(f'Frequency in the two libraries\n Count = {count}, threshold = {args.t}')
     plt.savefig(args.o)
     print('Done!')
 
