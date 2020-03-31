@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 # get reference sequence
 def get_ref(fa):
     fa.readline()
@@ -105,7 +105,7 @@ def merge_parts(middles):
 # output middles
 def output_middles(middles, fw, index=True):
     assert len(middles) > 0, 'No middle part is captured'
-    seqs = sorted(middles.keys(), key = lambda x: -middles[x])
+    seqs = sorted(middles.keys(), key = lambda x: (-middles[x], x.replace('-','')))
     count = sum(middles.values())
     if index:
         fw.write('Id\tSequence\tCount\tFrequency\n')
